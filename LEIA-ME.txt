@@ -1,0 +1,334 @@
+VERSÃO 35 — campos manuais de público e renda no Borderô (sem documento completo).
+Consulte ALTERACOES_V35.txt e teste com node test_v35_node.js.
+
+ARENA MRV | DADOS & ESTATÍSTICAS
+===============================
+Versão atualizada em 08/11/2026
+
+BANCO DE DADOS
+--------------
+Supabase: dadosarenamrv (projeto djemcaaggspxipdateny)
+Conta conectada: Estatlético
+
+A migração migracao_inserir_jogos.sql JÁ FOI EXECUTADA diretamente
+no banco. Os dados anteriores foram mantidos. Não é necessário
+executar nenhum SQL manualmente.
+
+Tabelas antigas: administradores, instalacao_status, jogadores,
+arbitragem, adversarios, jogos e atuacoes.
+Tabelas novas: adversario_jogadores, jogo_escalacoes,
+jogo_substituicoes, jogo_gols, jogo_cartoes e jogo_penaltis.
+Todas as tabelas têm criado_em e atualizado_em.
+
+NOVOS CADASTROS
+---------------
+- Cadastro: jogadores, técnicos, árbitros, assistentes, VAR e adversários.
+- Árbitros/assistentes/VAR agora aceitam data de nascimento opcional.
+- Inserir jogos: página separada, visível apenas ao admin autenticado.
+- Lista de partidas com filtros de temporada, campeonato e adversário.
+- Botão Novo jogo abre 8 abas:
+  1. Informações: temporada fixável, árbitro, assistentes, VAR,
+     adversário, placar, acréscimos, público, renda e pênaltis.
+  2. Escalação: colar relação CBF e substituições, prévia de IDs,
+     titulares, relacionados, participação e minutos em campo.
+  3. Gols: colar eventos do Galo e adversários; nome de guerra
+     obrigatório quando o goleador adversário não estiver cadastrado.
+  4. Disciplina: colar amarelos e vermelhos com motivos e minutos.
+  5. Observação: campo de texto livre.
+
+Minutos são exibidos em relógio de 90 minutos: 22' do 2T = 67';
++8' do 2T = 98'. Consideram-se os acréscimos do segundo tempo
+para a duração final do jogo. O banco guarda o período original.
+
+O sistema tenta identificar cada atleta por nome completo e por
+camisa + apelido. Se não houver correspondência, destaca em vermelho
+e permite cadastro rápido/vinculação na própria página. A tentativa
+de salvar uma súmula com nome não identificado é bloqueada.
+
+Apenas titulares contam na métrica Jogos. Reservas contam como
+Relacionados, com Participou e Minutos atualizados se entrarem.
+Vitórias/empates/derrotas usam somente o placar do jogo; a disputa
+de pênaltis tem estatísticas independentes.
+
+O envio do jogo e de todos os eventos é atômico via função
+public.salvar_jogo_completo: tudo salva ou tudo é revertido em erro.
+
+INSTALAÇÃO E EXECUÇÃO
+---------------------
+Arquivos do pacote devem ser mantidos em:
+C:\Users\stefano.faria\Desktop\Nova pasta\DadosArenaMRV
+
+Salve o novo downlad.zip nessa pasta e execute no PowerShell:
+
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "C:\Users\stefano.faria\Desktop\Nova pasta\DadosArenaMRV\atualizar_arena_mrv.ps1"
+
+O atualizador extrai o ZIP, gera backup dos arquivos substituídos,
+inicia o Python na porta 8001 (ou próxima livre) e abre o navegador.
+A porta 8000 do outro projeto permanece intocada.
+
+Para rodar diretamente sem atualizar arquivos:
+  python servidor.py --porta 8001
+
+Site:   http://localhost:8001/
+Admin:  http://localhost:8001/admin
+Jogos:  http://localhost:8001/inserir-jogos (somente após login)
+
+Teste local sem gravar dados:
+  python validar.py
+
+SEGURANÇA
+---------
+- A conta de administrador já foi cadastrada. Não distribua
+  o código de instalação inicial; não é mais necessário.
+- O HTML contém somente a chave anon pública do Supabase.
+- Nunca coloque senha de Postgres nem chave service_role no HTML.
+- O servidor local entrega apenas o HTML para as rotas registradas.
+  SQLs e outros arquivos privados recebem HTTP 404.
+- As tabelas novas possuem RLS; somente o admin autenticado escreve.
+- Para produção pública, é necessário hospedar com HTTPS.
+
+ARQUIVOS
+--------
+index.html               Portal completo, CSS e JavaScript embutidos
+inserir_jogos.js          Cópia de desenvolvimento do módulo inserido no HTML
+servidor.py               Servidor local e rotas
+atualizar_arena_mrv.ps1  Instalador e atualizador de ZIP
+banco.sql                 Referência do esquema inicial, já aplicado
+migracao_nomes_unicos.sql Referência da migração de nomes únicos
+migracao_inserir_jogos.sql Referência da migração desta versão, já aplicada
+logo_dados_arena_mrv_site.webp Marca do portal
+validar.py                Validação da estrutura e do servidor local
+LEIA-ME.txt               Instruções
+
+ATUALIZAÇÃO - CADASTROS POR TEMPORADA E BORDERÔ
+================================================
+- O jogador pode ser cadastrado uma vez em cada temporada. Mesmo nome em outra temporada é permitido.
+- Busca automática por nome consulta a temporada do formulário e não altera a temporada fixada.
+- Cada cadastro de temporada tem seu próprio UUID; pessoa_id identifica a mesma pessoa no histórico.
+- Em Inserir jogos há seis abas: Informações, Escalação, Gols, Disciplina, Observação e Borderô.
+- A aba Borderô permite colar ingressos, despesas B1/B2/B3, descontos e divisão de renda líquida.
+- O sistema preserva o texto original e os itens discriminados; divergências financeiras são exibidas.
+- Resultado = receita bruta - total das despesas B1 + B2 + B3; retenções/descontos NÃO são subtraídas novamente.
+- O placar esportivo independe das cobranças de pênaltis.
+- O banco dadosarenamrv já recebeu as migrações, portanto NÃO execute os arquivos .sql novamente.
+- Para atualizar, substitua downlad.zip na pasta habitual e execute atualizar_arena_mrv.ps1.
+- O servidor usa a porta 8001 (ou próxima livre) e mantém 8000 para outro projeto.
+
+ATUALIZAÇÃO DE ESCALAÇÕES E PLACAR (08/11/2026)
+------------------------------------------------
+- Identificação de jogadores com nomes abreviados no texto da CBF,
+  incluindo casos em que "...R(g)" vem sem espaço.
+- Na aba Escalação, "Adicionar jogador" permite lançar manualmente
+  relacionados, selecionando um cadastro da temporada da partida,
+  número da camisa e situação T (titular) ou R (reserva).
+- Linhas importadas não reconhecidas podem ser resolvidas com
+  vinculação manual da mesma camisa. Todos os atletas devem estar
+  corretamente vinculados à temporada do jogo.
+- O botão "Vincular / cadastrar" pode selecionar atletas de outra
+  temporada; se não existir o registro na temporada atual, ele
+  solicita confirmação para copiá-lo com novo UUID, mantendo o
+  vínculo da identidade histórica.
+- Na aba Gols, informe a quantidade de gols contra a favor do
+  Atlético ou do adversário. Para cada gol contra, informe minuto
+  corrido de jogo e tempo (1T ou 2T).
+- Para salvar, devem existir exatamente 11 titulares e a soma
+  dos gols informados deve coincidir com o placar dos dois times.
+- Gol contra conta para a equipe beneficiada, mas não é atribuído
+  à artilharia de nenhum jogador.
+- Essas verificações são feitas na interface e na função segura
+  do Supabase (migração migracao_placar_gols_contra.sql).
+- As migrações já foram aplicadas ao banco dadosarenamrv. Não
+  execute os arquivos SQL novamente, salvo se reconstruir a base.
+
+
+VERSAO - PRECO DE INGRESSOS E CENTAVOS
+- Valores financeiros sempre exibidos com duas casas decimais (R$ 1.962.077,75).
+- Menor e maior preco consideram linhas de ingresso pago com oferta disponivel; gratuidades (R$ 0,00) nao contam para preco minimo.
+- Preco medio de bilheteria = soma(preco por categoria x ingressos disponiveis pagos) / soma(ingressos disponiveis pagos).
+- Ticket medio vendido = renda bruta oficial / total de ingressos vendidos, incluindo gratuidades.
+- Todos os indicadores financeiros respeitam os filtros de temporada e campeonato e aparecem no Bordero, em Publico e Renda e na previa de lancamento.
+- Nenhuma mudanca de tabela ou SQL necessario: calculo a partir de bordero_ingressos e jogo_borderos ja existentes.
+
+ATUALIZAÇÃO - RODADA / FASE E CAMPEONATO FIXO
+------------------------------------------------
+- Informações do jogo: campo opcional Rodada / Fase após Campeonato.
+- Checkbox Fixar campeonato: quando marcado, reutiliza o campeonato
+  nos próximos jogos cadastrados durante a sessão. Desmarcado, os
+  novos formulários abrem com campeonato vazio.
+- A rodada/fase é específica de cada jogo e nunca fica fixada.
+- A lista Inserir jogos mostra Rodada / Fase, inclusive ao editar.
+- Migração migracao_rodada_fase_campeonato_fixo.sql já foi aplicada
+  diretamente no Supabase dadosarenamrv; não é necessário executar SQL.
+- O campo foi gravado e editado em testes transacionais revertidos.
+
+ATUALIZAÇÃO: FIXAR TÉCNICO
+- Em Inserir jogos > Informações, marque "Fixar técnico" ao lado do treinador para reutilizá-lo no próximo jogo.
+- Ao trocar de temporada, o portal vincula apenas o cadastro correspondente à mesma pessoa na nova temporada; se não houver cadastro, o técnico fica em branco.
+- A opção funciona de forma independente de Fixar temporada e Fixar campeonato.
+
+ATUALIZAÇÃO V12 - CAMPEONATOS E ESTATÍSTICAS (08/11/2026)
+--------------------------------------------------------
+- Técnicos: formulário sem número e pé preferencial. No banco, ambos
+  ficam NULL para técnicos; para jogadores, o pé continua obrigatório.
+- Cadastro de campeonatos: nome obrigatório e tipo obrigatório,
+  opções Amistoso, Nacional, Internacional e Regional. Nome único.
+- Informações de jogo: campeonato, adversário, técnico e profissionais
+  da arbitragem são campos pesquisáveis conforme a digitação.
+- Público pagante e renda bruta foram retirados da aba Informações;
+  são apurados exclusivamente pela importação do Borderô.
+- Novas abas após Borderô: Estatísticas Coletivas e Estatísticas Individuais.
+- Estatísticas Coletivas: cole o JSON com statistics, period="ALL" e
+  groups.statisticsItems. Para partidas na Arena MRV, home = Atlético,
+  away = adversário. Somente período ALL entra nas análises.
+- Estatísticas Individuais: cole o JSON com home.players. Somente os
+  atletas do Atlético são considerados; away.players é ignorado.
+- Os atletas são vinculados ao cadastro UUID da temporada. Caso a
+  correspondência seja incerta, escolha o registro correto na tabela.
+- Indicadores: posse de bola, xG, grandes chances, chances convertidas,
+  finalizações, certas, na trave, de dentro da área, defesas, passes,
+  passes certos, faltas, escanteios, desarmes, amarelos e vermelhos.
+  Para jogadores: também toques na bola e rating.
+- IMPORTANTE: métricas ausentes no JSON ficam NULL, não zero. O JSON
+  individual não contém todos os 16 indicadores do coletivo.
+- Toques em campo: Defesa = goleiro/laterais/zagueiros; Meio =
+  volantes/meias; Ataque = meias/atacantes. Como 'Meia' participa em
+  dois setores, os subtotais não são exclusivos.
+- Ratings: média dos atletas com rating informado, geral, titulares,
+  reservas que atuaram e setores. Quem não recebeu nota é excluído.
+- A página pública Estatísticas também mostra a tabela completa e
+  os agregados de toques e rating, respeitando o filtro.
+- As informações são gravadas na mesma transação do jogo, por meio
+  da função public.salvar_jogo_completo no Supabase.
+- Tabelas novas: campeonatos, jogo_estatisticas_coletivas,
+  jogo_estatisticas_individuais. Todas usam RLS e colunas de auditoria.
+- Migração migracao_campeonatos_estatisticas.sql já aplicada no projeto
+  dadosarenamrv. Não é necessário executar nenhum SQL manualmente.
+
+ATUALIZAÇÃO V13 - RELATÓRIO COMPLETO AO CLICAR NO JOGO (08/11/2026)
+-----------------------------------------------------------------
+- Na página Jogos, clique em qualquer linha para abrir os detalhes completos.
+- A URL poderá ser compartilhada no formato /jogos?jogo=<UUID>.
+- O relatório consulta as tabelas já existentes do Supabase e exibe:
+  informações gerais, arbitragem, escalação, substituições, gols,
+  cartões, disputa de pênaltis, Borderô/DRE, receita por setor,
+  despesas, descontos, divisão de renda, estatísticas coletivas,
+  estatísticas individuais, observações e textos/JSONs originais.
+- Inclui pré-análises de placar, primeiro gol, xG, finalizações,
+  rating médio, mais toques, cartões, público e resultado financeiro.
+- Escalação: goleiro > lateral-direito > zagueiros > lateral-esquerdo
+  > volante > meia > atacante > técnico. Jogadores que entraram ficam
+  imediatamente abaixo do substituído, com setas vermelha (saída)
+  e verde (entrada), mantendo minutos, gols, assistências e cartões.
+- Reservas que não entraram permanecem em seção separada.
+- Estatísticas individuais: se o nome do JSON não identificar o atleta,
+  procura a CAMISA informada na ESCALAÇÃO DA PARTIDA; só vincula quando
+  existe um único atleta compatível. Em ambiguidades, mantém a escolha manual.
+- Fotos de jogadores e demais dados continuam vindo do Supabase.
+- Os dados ausentes são marcados como não informados; nenhuma estatística
+  é criada artificialmente. O portal continua somente leitura para visitantes.
+- Nenhuma migração no banco é necessária para esta atualização.
+
+
+ATUALIZACAO V14 — PAINEL DE ESTATISTICAS
+-----------------------------------------
+- A pagina Estatisticas agora tem abas Coletivo e Individual.
+- Sub-abas: Visao geral, Ataque, Finalizacoes, Posse e passes,
+  Defesa, Disciplina e Goleiros. No Individual existe tambem Rating.
+- Graficos por temporada, comparativo Atletico vs adversarios,
+  indicadores com cobertura de jogos e tabelas anuais.
+- Opcao Comparar todas as temporadas e visualizacao Media/Total.
+- Rating geral: media das notas dos atletas avaliados (sem preencher
+  notas ausentes com zero). Rating nao e somado no modo Total.
+- Melhor em campo: maior nota do Atletico na partida; em caso de
+  empate na maior nota, cada atleta empatado recebe uma indicacao.
+- Ranking e filtro por jogador utilizam pessoa_id para reunir
+  temporadas diferentes do mesmo atleta.
+- Posições: goleiros/laterais/zagueiros=Defesa; volantes/meias=Meio;
+  meias/atacantes=Ataque. Portanto Meias sao contados em dois grupos.
+- Usa as tabelas publicas existentes jogo_estatisticas_coletivas,
+  jogo_estatisticas_individuais, jogos e jogadores. Sem migracao SQL.
+
+
+ARENA MRV — ATUALIZAÇÃO v15 (FORMULÁRIO INSERIR JOGOS)
+- Ano da data acompanha a temporada. Um novo jogo preenche a data com o dia e o mês atuais, mas no ano da temporada selecionada. Alterar a temporada preserva dia/mês e altera o ano da data (com ajuste para dia válido, quando necessário).
+- Removido o aviso de temporada sem partidas na área administrativa Inserir jogos. Não remove avisos de outras páginas.
+- Comboboxes pesquisáveis para campeonato, adversário, técnico, árbitro, assistentes e VAR. Resultados em ordem alfabética, primeira opção em destaque, Enter para selecionar, setas para navegar e Escape para fechar.
+- Quando um nome não existir, pressione Enter ou selecione + Cadastrar no menu. Modal de cadastro rápido cria o registro na tabela correspondente do Supabase e já o seleciona no jogo. Fotos/escudos são opcionais.
+- O novo cadastro rápido depende de login administrativo e das permissões já configuradas no Supabase. Não há novas migrações SQL.
+- A edição de partidas e as opções Fixar temporada, Fixar campeonato e Fixar técnico continuam disponíveis.
+
+ARENA MRV — ATUALIZAÇÃO v16 (08/11/2026)
+-----------------------------------------
+Mudanças nesta versão:
+- Cadastro rápido de jogadores: a área "Foto" aceita Ctrl+V e exibe prévia;
+  clique na área para dar foco ou use Escolher arquivo.
+- Em Inserir jogos, Ctrl+Enter avança à aba seguinte; na última aba,
+  aciona Salvar partida e súmula, mantendo todas as validações obrigatórias.
+- Associação de nomes de súmula de jogadores do Atlético fica salva
+  permanentemente no Supabase, com base na pessoa histórica (pessoa_id).
+  Para uma temporada diferente, será usado apenas o cadastro daquele ano.
+- Nas estatísticas individuais, a seleção manual de ID Sofascore também
+  registra o vínculo com a pessoa para futuras partidas.
+- Nos gols adversários, existe a ação "Vincular jogador" para selecionar
+  um atleta do clube ou criar um registro. Os vínculos levam em conta o
+  adversário e não são aplicados automaticamente a clubes diferentes.
+- O banco também memoriza a associação de goleadores adversários criada
+  durante o salvamento de uma partida, por meio de um gatilho.
+- Todos os dados antigos foram preservados.
+
+BANCO: nova tabela public.vinculos_nomes_jogadores, com RLS e auditoria
+criado_em/atualizado_em. A migração migracao_vinculos_permanentes.sql já foi
+aplicada no Supabase dadosarenamrv. Nenhuma execução manual de SQL necessária.
+
+Validação: python validar.py (rotas); os testes de navegador com Playwright são
+opcionais e estão em test_v16.py (necessita playwright e Chromium).
+- Nomes com as mesmas palavras em ordem diferente (ex.: "Zaracho Federico Matias"
+  e "Federico Matias Zaracho") também podem ser reconhecidos automaticamente,
+  somente quando uma única pessoa corresponde. Caso contrário, pedir vínculo.
+
+
+ARENA MRV — ATUALIZAÇÃO v17 (08/11/2026)
+========================================
+- Cadastro rápido de adversários: escudo via Ctrl+V, prévia e escolha de arquivo.
+- Cadastro rápido de técnicos, árbitros, assistentes e VAR: foto via Ctrl+V, prévia e escolha de arquivo.
+- Cadastro rápido de jogadores (Galo e adversários): foto via Ctrl+V; imagens são salvas no Supabase.
+- Nova coluna opcional 'foto' em adversario_jogadores (migração já aplicada).
+- Gols colados no formato Coritiba S.a.f./PR são reconhecidos como gols do adversário.
+- O nome do jogador não absorve o nome do clube; o texto original do jogador é preservado.
+- Goleador adversário sem cadastro exige nome de guerra, cadastro/vínculo permanente e seleção do clube.
+- Vínculos guardados em vinculos_nomes_jogadores; serão reconhecidos nas próximas súmulas.
+- O placar informado deve conferir exatamente com os gols cadastrados.
+- Testes: python test_v17.py (usa playwright e Chromium).
+- A migração migracao_foto_jogador_adversario_v17.sql já foi executada.
+- A aplicação local utiliza a porta 8001; não reinicie o outro projeto na porta 8000.
+
+========== ALTERACOES DA VERSAO 20 ==========
+Confira ALTERACOES_V20.txt para detalhes.
+O campo statistics.goalAssist do JSON individual alimenta a pagina
+Assistencias e o Top 10. xA usa statistics.expectedAssists e nao deve
+ser somado ao numero de assistencias efetivas.
+A migracao correspondente ja foi aplicada ao banco dadosarenamrv.
+=============================================
+
+VERSÃO 21 - TAXA DE OCUPAÇÃO E RANKINGS POR JOGO
+-------------------------------------------------
+- Referência: 44.892 lugares de futebol (Brahma 14.765; ArcelorMittal 4.053; Inter 26.074).
+- Visitante 4.266 lugares é subconjunto da Arena, não é somado à capacidade total.
+- A ocupação geral usa público pagante / 44.892. O setor usa somente ingressos cuja
+  localização identifica um único anel. Categorias de vários anéis não são atribuídas
+  por estimativa; o site informa não classificados e a cobertura setorial.
+- Top 10 em Público e renda e recordes por jogo em Estatísticas Coletivas/Individuais.
+- Nenhuma migração de banco é necessária na versão 21.
+
+ATUALIZAÇÃO V22 (assistências e atalho):
+A página Assistências usa statistics.goalAssist dos JSONs individuais já cadastrados.
+Para ver dados históricos quando a temporada atual não tiver jogos, altere a temporada no filtro.
+Na página Inserir jogos, Ctrl+Enter avança de aba mesmo fora dos campos; na última aba, tenta salvar.
+
+
+--- NOVO: VERSÃO 33 ---
+A página Cadastro tem endereço direto para cada aba: /cadastro/jogadores, /cadastro/tecnicos, /cadastro/arbitros, /cadastro/assistentes, /cadastro/var, /cadastro/adversarios e /cadastro/campeonatos.
+O carregamento administrativo consulta apenas campos necessários e busca fotos individualmente na edição.
+A sessão é renovada automaticamente antes de expirar e consultas 401 são repetidas apenas uma vez.
+Imagens: clique na caixa compacta e cole com Ctrl+V. O seletor de arquivo foi removido dos cadastros de imagem.
+Se a lista falhar, clique em Atualizar lista; registros existentes não são apagados.

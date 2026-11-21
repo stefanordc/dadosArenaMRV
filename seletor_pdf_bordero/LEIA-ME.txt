@@ -1,0 +1,18 @@
+SELETOR DE TRECHOS DE PDF
+
+1. Extraia o arquivo download.zip.
+2. Abra a pasta seletor_pdf_bordero.
+3. Dê dois cliques em iniciar_windows.bat.
+4. No navegador, abra http://127.0.0.1:8765 caso não abra automaticamente.
+5. Cole o link PDF, clique em Abrir PDF e arraste um retângulo para selecionar trechos.
+6. Exporte o resultado em TXT ou CSV.
+
+REQUISITOS: Python 3 instalado, navegador atualizado e internet para baixar PDF.js.
+O servidor roda somente no computador local.
+O PDF pode não abrir se o endereço exigir login ou bloquear downloads.
+PDFs digitalizados sem camada de texto não podem ser extraídos sem OCR.
+TXT/CSV exportam apenas as áreas selecionadas, em ordem visual aproximada.
+TXT/CSV não preservam formatação visual original, como bordas de tabelas.
+TXT/CSV não são enviados para servidores externos.
+TXT/CSV podem conter informações sensíveis: revise antes de compartilhar.
+TXT/CSV uses csv semicolon separator for compatibility with Excel in Brazil.

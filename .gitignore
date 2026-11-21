@@ -1,0 +1,7 @@
+*.log
+logs/
+backups/
+__pycache__/
+*.pyc
+downlad.zip
+CODIGO_INSTALACAO.txt
