@@ -1,0 +1,11 @@
+# O site é estático e todas as páginas são renderizadas pelo index.html.
+[build]
+  publish = "."
+
+# Permite abrir e atualizar as rotas internas sem retornar 404.
+# Arquivos estáticos existentes continuam sendo servidos normalmente.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = false
