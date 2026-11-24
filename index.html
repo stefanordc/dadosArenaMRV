@@ -652,7 +652,7 @@ function renderBordero(){
  const m=currentMatches(),f=finance(m);
  const values=[['(+) Receita bruta de ingressos',f.revenue,''],['(-) B1 • Aluguéis e seguros',f.b1,'muted-row'],['(-) B2 • Taxas e impostos',f.b2,'muted-row'],['(-) B3 • Despesas operacionais',f.b3,'muted-row'],['(=) Total das despesas (B1+B2+B3)',f.expenses,'subtotal'],['(=) Resultado líquido calculado',f.profit,'final'],['Descontos / retenções (informativo)',f.discounts,'muted-row'],['Líquido informado para o Atlético',f.net,'subtotal']];
  const warning=f.net!=null&&f.profit!=null&&Math.abs(f.net-f.profit)>.015?`<div class="info-alert data-warning">A soma do líquido informado pelo clube é diferente do líquido calculado em ${money(Math.abs(f.net-f.profit))}. Confira os borderôs.</div>`:'';
- return header('Borderô financeiro','Demonstrativo de resultado dos jogos na Arena MRV (DRE).')+filterBar(['season','competition'])+
+ return header('Borderô financeiro*','Demonstrativo de resultado dos jogos na Arena MRV (DRE).')+`<div class="info-alert">* Público e renda bruta são válidos para todos os campeonatos. Já o borderô detalhado, com venda de ingressos por setor, lucro líquido, etc., não contempla as competições organizadas pela Conmebol, uma vez que a entidade não divulga esse documento.</div>`+filterBar(['season','competition'])+
  `<div class="metric-grid">${boxMetric('Lucro líquido médio',fmtCompactCurrency(f.avgProfit),'Por partida',true,'wallet')}${boxMetric('Lucro líquido total',fmtCompactCurrency(f.profit),'Acumulado no período',false,'chart')}${boxMetric('Despesa média',fmtCompactCurrency(f.avgExpenses),'Por partida',false,'receipt')}${boxMetric('Despesa total',fmtCompactCurrency(f.expenses),'Acumulado no período',false,'wallet')}</div>`+ticketMetricsHTML(m)+
  (f.coverage<f.total?`<div class="info-alert">Há ${fmt(f.total-f.coverage)} partida(s) sem renda e despesas completas. O lucro do período fica em branco até completar os borderôs.</div>`:'')+warning+
  panel('DRE • Demonstrativo de resultado',`<div class="table-wrap"><table class="dre-table"><thead><tr><th>Conta</th><th style="text-align:right">Total do período</th><th style="text-align:right">Média por jogo</th></tr></thead><tbody>${values.map(([label,value,type])=>`<tr class="${type}"><td>${label}</td><td style="text-align:right">${money(value)}</td><td style="text-align:right">${money(value==null||!m.length?null:value/m.length)}</td></tr>`).join('')}</tbody></table></div><p class="footnote">Os descontos/retenções do borderô são registrados separadamente e não subtraídos novamente. Total das despesas segue o total oficial informado; diferenças de centavos entre categorias permanecem identificáveis no cadastro. Não substitui DRE contábil auditada.</p>`,'Resultado do período selecionado')+
@@ -4112,10 +4112,6 @@ statsIndividualViewV14=function(games){
  let html=arenaV49OriginalIndividual(games);
  const control=`<label class="arena-v49-min-label" for="arenaV49MinGames">Mínimo de jogos <input id="arenaV49MinGames" type="number" min="1" max="9999" step="1" value="${arenaV49State.minimumGames}" aria-label="Quantidade mínima de jogos para o ranking"></label>`;
  if(html.includes('Ranking de jogadores · Rating médio'))html=html.replace(/(<h3>Ranking de jogadores ·[^<]*<\/h3>)/,`$1${control}`);
- const table=arenaV49ParticipationTable(games);
- const insert='<div class="stats-section-title-v14"><h2>';
- if(html.includes(insert))html=html.replace(insert,table+insert);
- else html+=table;
  return html;
 };
 document.addEventListener('change',event=>{
@@ -4369,9 +4365,9 @@ function arenaV50PersonRank(title,games,goalOnly,older){
 const arenaV50OldIndividual=statsIndividualViewV14;
 statsIndividualViewV14=function(games){
  const output=arenaV50OldIndividual(games);
- if(state.statsIndividualCategory!=='geral')return output;
+ if(state.statsIndividualCategory!=='geral')return output+arenaV49ParticipationTable(games);
  return output+`${arenaV50Loading()}<div class="stats-section-title-v14"><h2>Recordes de idade na Arena MRV</h2><p>Idade exata na data da partida; um atleta aparece uma única vez em cada ranking. Os filtros de temporada e campeonato são respeitados.</p></div>
- <div class="stats-summary-grid-v14">${arenaV50PersonRank('Top 5 mais velhos a jogar',games,false,true)}${arenaV50PersonRank('Top 5 mais novos a jogar',games,false,false)}${arenaV50PersonRank('Top 5 mais velhos a marcar gol',games,true,true)}${arenaV50PersonRank('Top 5 mais novos a marcar gol',games,true,false)}</div>`;
+ <div class="stats-summary-grid-v14">${arenaV50PersonRank('Top 5 mais velhos a jogar',games,false,true)}${arenaV50PersonRank('Top 5 mais novos a jogar',games,false,false)}${arenaV50PersonRank('Top 5 mais velhos a marcar gol',games,true,true)}${arenaV50PersonRank('Top 5 mais novos a marcar gol',games,true,false)}</div>`+arenaV49ParticipationTable(games);
 };
 function arenaV50RefOf(g){const meta=arenaV50.meta.get(String(g.id));return meta?arenaV50.refs.get(String(meta.arbitro_id||'')):null;}
 function arenaV50Fouls(g,side){return statsSideValueV14(g,side,'faltas_cometidas');}
